@@ -1,18 +1,31 @@
-window.addEventListener('message', (e) => {
+window.addEventListener('message', async (e) => {
   const tool = e.data.ouTool;
 
   if (tool === 'inspector') {
     console.log('[INSPECTOR] Message received: ENABLE');
-    import(chrome.runtime.getURL('tools/inspector.js'))
-      .then(() => console.log('[INSPECTOR] Script loaded'))
-      .catch(err => console.error('[INSPECTOR] Load failed:', err));
+    if (!window.OUInspector) {
+      await import(chrome.runtime.getURL('tools/inspector.js'));
+    }
+    window.OUInspector.attach();
   }
 
   if (tool === 'inspector-disable') {
     console.log('[INSPECTOR] Message received: DISABLE');
-    if (window.__OU_INSPECTOR_ACTIVE__) {
-      const event = new KeyboardEvent('keydown', { key: 'Escape' });
-      window.dispatchEvent(event);
+    if (window.OUInspector) {
+      window.OUInspector.detach();
     }
   }
+
+  if (tool === 'altChecker') {
+  console.log('[ALT CHECKER] Activating');
+  if (!window.OUAltChecker) {
+    await import(chrome.runtime.getURL('tools/altChecker.js'));
+  }
+  window.OUAltChecker.attach();
+}
+
+if (tool=== 'altChecker-disable') {
+  if (window.OUAltChecker) window.OUAltChecker.detach();
+}
+
 });

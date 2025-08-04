@@ -29,3 +29,30 @@ toggleEl.addEventListener('change', (e) => {
     });
   });
 });
+
+const altToggle = document.getElementById('toggle-altchecker');
+
+chrome.storage.local.get(['altCheckerEnabled'], (result) => {
+  altToggle.checked = result.altCheckerEnabled || false;
+});
+
+altToggle.addEventListener('change', (e) => {
+  const isEnabled = e.target.checked;
+  chrome.storage.local.set({ altCheckerEnabled: isEnabled });
+
+  const message = isEnabled ? 'altChecker' : 'altChecker-disable';
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (toolName) => {
+        const iframe = document.querySelector('iframe#sqs-site-frame');
+        if (iframe) {
+          iframe.contentWindow.postMessage({ ouTool: toolName }, '*');
+        }
+      },
+      args: [message]
+    });
+  });
+});
+
