@@ -1,30 +1,25 @@
-// tools/styleSync.js
-
 console.log('[STYLE SYNC] Script loaded');
 
 window.OUStyleSync = window.OUStyleSync || (() => {
   let panel;
 
-  function getTweaks() {
-    const tweaks = {};
-    const allTweakIds = window.Squarespace?.Tweak?.registered || [];
-    allTweakIds.forEach((tweak) => {
-      try {
-        tweaks[tweak] = window.Squarespace.Tweak.getValue(tweak);
-      } catch {}
+  async function getColorsViaAPI() {
+    const res = await fetch('/api/website-colors', {
+      credentials: 'include'
     });
-    return tweaks;
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch colors JSON');
+    }
+
+    return await res.json();
   }
 
-  function applyTweaks(tweaks) {
-    Object.entries(tweaks).forEach(([key, value]) => {
-      try {
-        window.Squarespace.Tweak.setValue(key, value);
-        console.log(`[STYLE SYNC] Set ${key} = ${value}`);
-      } catch (e) {
-        console.warn(`[STYLE SYNC] Failed to set ${key}:`, e);
-      }
-    });
+  function getCookie(name) {
+    return document.cookie
+      .split('; ')
+      .find(row => row.startsWith(name + '='))
+      ?.split('=')[1];
   }
 
   function downloadJSON(data, filename) {
@@ -89,25 +84,46 @@ window.OUStyleSync = window.OUStyleSync || (() => {
 
     document.body.appendChild(panel);
 
+    // Event handlers go here (inside attach!)
     document.getElementById('ou-save-tweaks').onclick = () => {
-      const tweaks = getTweaks();
-      downloadJSON(tweaks, 'squarespace-tweaks.json');
+      getColorsViaAPI()
+        .then(colors => {
+          downloadJSON(colors, 'squarespace-colors.json');
+        })
+        .catch(err => {
+          alert('Failed to fetch colors: ' + err.message);
+        });
     };
 
     document.getElementById('ou-load-tweaks').onclick = () => {
-      readFile((text) => {
+      readFile(async (text) => {
         try {
           const tweaks = JSON.parse(text);
-          applyTweaks(tweaks);
+          const crumb = getCookie('crumb');
+
+fetch("/api/page-sections/6890d1507bb2b434d6b354ea/collection/6890d1507bb2b434d6b354e9", {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json",
+    "x-csrf-token": crumb, // ✅ Use csrf, not xsrf
+    "Referer": "https://onwards-upwards.squarespace.com/config/pages" // optional but useful
+  },
+  credentials: "include", // ✅ required
+  body: JSON.stringify(tweaks)
+});
+
+
+
+          alert('✅ Color styles uploaded successfully!');
         } catch (e) {
-          alert('Invalid JSON');
+          alert('❌ Failed to upload styles: ' + e.message);
         }
       });
     };
 
     document.getElementById('ou-save-css').onclick = () => {
       const css = document.querySelector('[data-collection-id] textarea')?.value ||
-                  window.Design?.getEditorStore?.()?.customCss || '';
+        window.Design?.getEditorStore?.()?.customCss || '';
       downloadText(css, 'squarespace-custom-css.txt');
     };
 

@@ -56,3 +56,55 @@ altToggle.addEventListener('change', (e) => {
   });
 });
 
+const styleSync = document.getElementById('toggle-stylesync');
+
+chrome.storage.local.get(['styleSyncEnabled'], (result) => {
+  styleSync.checked = result.styleSyncEnabled || false;
+});
+
+styleSync.addEventListener('change', (e) => {
+  const isEnabled = e.target.checked;
+  chrome.storage.local.set({ styleSyncEnabled: isEnabled });
+
+  const message = isEnabled ? 'styleSync' : 'styleSync-disable';
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (toolName) => {
+        const iframe = document.querySelector('iframe#sqs-site-frame');
+        if (iframe) {
+          iframe.contentWindow.postMessage({ ouTool: toolName }, '*');
+        }
+      },
+      args: [message]
+    });
+  });
+});
+
+const snippet = document.getElementById('toggle-snippet');
+
+chrome.storage.local.get(['snippetEnabled'], (result) => {
+  snippet.checked = result.snippetEnabled || false;
+});
+
+snippet.addEventListener('change', (e) => {
+  const isEnabled = e.target.checked;
+  chrome.storage.local.set({ snippetEnabled: isEnabled });
+
+  const message = isEnabled ? 'snippet' : 'snippet-disable';
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (toolName) => {
+        const iframe = document.querySelector('iframe#sqs-site-frame');
+        if (iframe) {
+          iframe.contentWindow.postMessage({ ouTool: toolName }, '*');
+        }
+      },
+      args: [message]
+    });
+  });
+});
+
