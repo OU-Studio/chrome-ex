@@ -1,0 +1,4 @@
+-webkit-transition: all .5s ease !important;
+-moz-transition: all .5s ease !important;
+-o-transition: all .5s ease !important;
+transition: all .5s ease !important;

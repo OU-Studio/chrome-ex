@@ -1,0 +1,8 @@
+<script>
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('mercury:load', init);
+
+function init(){
+
+}
+</script>
