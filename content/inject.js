@@ -1,3 +1,14 @@
+// Always-on Page Builder button: top frame of the admin shell only (the site preview iframe also runs this
+// script because all_frames is true, so guard on window.top and on /config paths).
+(async () => {
+    if (window !== window.top) return;
+    if (!location.pathname.startsWith('/config')) return;
+    if (!window.OUPageBuilder) {
+        await import(chrome.runtime.getURL('tools/pagebuilder.js'));
+    }
+    window.OUPageBuilder.attach();
+})();
+
 window.addEventListener('message', async (e) => {
     const tool = e.data.ouTool;
 
